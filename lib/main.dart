@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eshoppingadmin/Homepage.dart';
 import 'package:flutter/material.dart';
 
@@ -27,8 +28,83 @@ class MyApp extends StatelessWidget {
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: HomePage(),
+      home: DemoHomepage(),
     );
   }
 }
 
+class DemoHomepage extends StatefulWidget {
+  @override
+  _DemoHomepageState createState() => _DemoHomepageState();
+}
+
+class _DemoHomepageState extends State<DemoHomepage> {
+  final ref = Firestore.instance.collection('demoDepartment');
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: StreamBuilder(
+        stream: ref.snapshots(),
+        builder: (_, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasData)
+            return ListView.builder(
+                itemCount: snapshot.data.documents.length,
+                itemBuilder: (_, index) {
+                  return ListTile(
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => DemoPage2(
+                                    deptName: snapshot
+                                        .data.documents[index].data['name'],
+                                  ))),
+                      title: Text(snapshot.data.documents[index].data['name']
+                          .toString()));
+                });
+          else
+            return Text('Loading');
+        },
+      ),
+    );
+  }
+}
+
+class DemoPage2 extends StatefulWidget {
+  final String deptName;
+
+  const DemoPage2({Key key, this.deptName}) : super(key: key);
+  @override
+  _DemoPage2State createState() => _DemoPage2State();
+}
+
+class _DemoPage2State extends State<DemoPage2> {
+  getCategories() {}
+
+  final ref = Firestore.instance.collection('demoDepartment');
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: StreamBuilder(
+        stream: ref.where('name', isEqualTo: widget.deptName).snapshots(),
+        builder: (_, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasData) {
+            Map<String, dynamic> categories =
+                snapshot.data.documents[0].data['categories'];
+            List keyCat = categories.keys.toList();
+            print(keyCat);
+
+            return ListView.builder(
+                itemCount: keyCat.length,
+                itemBuilder: (_, index) {
+                  return ListTile(title: Text(keyCat[index]));
+                });
+          } else
+            return Text('Loading');
+        },
+      ),
+    );
+  }
+}
